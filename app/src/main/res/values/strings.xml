@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Hopper</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_draw_game">DrawGame</string>
+    <string name="title_activity_draw_game2">DrawGame2</string>
+</resources>
