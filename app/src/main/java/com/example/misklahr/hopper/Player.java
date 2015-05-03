@@ -1,7 +1,6 @@
 package com.example.misklahr.hopper;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
@@ -21,6 +20,7 @@ public class Player {
     private Bitmap playerPic;
 
     private int width;
+    private int halfPlayerWidth;
     private int scale;
 
     private long beforeJumpTime;
@@ -30,14 +30,13 @@ public class Player {
         jumpTime = 1000;
         score = 0;
         inAir = false;
-        scale = 5;
+        scale = 8;
         jump = true;
     }
 
 
-    public Bullet createBullet(float x, float y) {
-        Bullet bullet = new Bullet();
-        bullet.initiate(refX, refY, x, y, width);
+    public Bullet createBullet(float x, float y, Paint paint) {
+        Bullet bullet = new Bullet(refX, refY, x, y, width, paint);
         return bullet;
     }
 
@@ -58,8 +57,6 @@ public class Player {
             refX = xPos;
             refY = yPos;
 
-//            refX = rect.exactCenterX();
-//            refY = rect.exactCenterY();
         }
 
 
@@ -95,21 +92,14 @@ public class Player {
         return inAir;
     }
 
-    public boolean jumpReady() {
-        return jump;
-    }
 
     public boolean shootReady() {
         return !inAir && !jump;
     }
 
-//    public Rect getRect() {
-//        return rect;
-//    }
-
-
     public Bitmap initiate(int width, float x, float y, Bitmap playerPic) {
         this.width = width;
+        halfPlayerWidth = width / (2 * scale);
         jumpSpeed = width / jumpTime;
         refX = x;
         refY = y;
@@ -119,10 +109,8 @@ public class Player {
     }
 
     private void setCoords(float x, float y) {
-
         xPos = x;
         yPos = y;
-//        rect.set((int) (x - width / 20), (int) (y - width / 20), (int) (x + width / 20), (int) (y + width / 20));
     }
 
     public void setInAir() {
@@ -130,12 +118,18 @@ public class Player {
         jump = false;
     }
 
-    public void drawObject(Canvas canvas, Paint paint){
+    public void drawPlayer(Canvas canvas, Paint paint){
         canvas.save();
         canvas.rotate(rotation,xPos,yPos);
-        canvas.drawBitmap(playerPic,(xPos - width / (2 * scale)), (yPos - width / (2 * scale)), paint);
+        canvas.drawBitmap(playerPic,(xPos - halfPlayerWidth), (yPos - halfPlayerWidth), new Paint());
         canvas.restore();
     }
 
+    public float getXPos(){
+        return xPos;
+    }
+    public float getYPos(){
+        return yPos;
+    }
 
 }

@@ -16,6 +16,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -62,10 +63,11 @@ public class DrawGame extends Activity implements View.OnTouchListener {
         private Paint paint;
         private long compTime, currTime;
 
-        private Player player;
         private Bitmap playerPic;
 
-        private float x, y;
+        private int level;
+
+        private float meX, meY;
         private boolean beginning = true;
         private boolean initiateGame = false;
         private boolean startGame = false;
@@ -73,7 +75,9 @@ public class DrawGame extends Activity implements View.OnTouchListener {
         private int width;
         private int height;
 
-        private LinkedList<Bullet> bulletList;
+        private Game game;
+
+
 
 
         public MyView(Context context) {
@@ -82,13 +86,13 @@ public class DrawGame extends Activity implements View.OnTouchListener {
             paint = new Paint();
             compTime = System.currentTimeMillis();
 
-            player = new Player();
+            level = 1;
 
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inScaled = false;
             playerPic = BitmapFactory.decodeResource(getResources(),R.drawable.player,options);
 
-            bulletList = new LinkedList<Bullet>();
+
 
             paint.setColor(Color.WHITE);
             paint.setTextAlign(Paint.Align.CENTER);
@@ -109,21 +113,11 @@ public class DrawGame extends Activity implements View.OnTouchListener {
                     height = canvas.getHeight();
                     beginGameMenu(canvas);
                 } else if (initiateGame && !startGame) {
-                    initiateGame(canvas);
+                    initiateGame();
                 } else {
-
 //                    canvas.drawText("In air: " + player.isInAir(), 300, 100, paint);
 //                    canvas.drawText("Jump: " + player.jumpReady(), 300, 300, paint);
-
-                    animateObjects(x, y);
-
-                    player.drawObject(canvas,paint);
-
-                    for (Bullet b : bulletList) {
-                        canvas.drawRect(b.getRect(), paint);
-                    }
-
-
+                    input = game.animateObjects(meX, meY, input, canvas);
                 }
 
                 holder.unlockCanvasAndPost(canvas);
@@ -131,25 +125,6 @@ public class DrawGame extends Activity implements View.OnTouchListener {
             }
         }
 
-        private void animateObjects(float x, float y) {
-
-            if (input) {
-
-                if (player.shootReady()) {
-                    bulletList.add(player.createBullet(x, y));
-                }
-
-                if (player.interact(x, y)) {
-                    input = false;
-                }
-            } else {
-                player.jump(x, y, 0);
-            }
-
-            for (Bullet b : bulletList) {
-                b.jump();
-            }
-        }
 
         private void beginGameMenu(Canvas canvas) {
             currTime = System.currentTimeMillis();
@@ -157,7 +132,7 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
                 paint.setTextSize(width / 10);
 
-                canvas.drawText("Play!", width / 2, height / 2, paint);
+                canvas.drawText("Spawn!", width / 2, height / 2, paint);
             }
 
             if (currTime - compTime > 1000) {
@@ -165,12 +140,13 @@ public class DrawGame extends Activity implements View.OnTouchListener {
             }
         }
 
-        private void initiateGame(Canvas canvas) {
-            x = width / 2;
-            y = height / 2;
+        private void initiateGame() {
+            meX = width / 2;
+            meY = height / 2;
 
-            playerPic = player.initiate(width, x, y, playerPic);
-            player.jump(x, y, 0);
+            game = new Game(level);
+
+            playerPic = game.initiate(width, height, meX, meY, playerPic);
 
             initiateGame = false;
             startGame = true;
@@ -186,12 +162,9 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
             switch (me.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    if (startGame && !player.isInAir()) {
-
-                        Random r = new Random();
-                        paint.setColor(Color.rgb(r.nextInt(256), r.nextInt(256), r.nextInt(256)));
-                        x = me.getX();
-                        y = me.getY();
+                    if (startGame && game.getNewInput()) {
+                        meX = me.getX();
+                        meY = me.getY();
                         input = true;
                     }
                     break;
