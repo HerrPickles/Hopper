@@ -2,47 +2,61 @@ package com.example.misklahr.hopper;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
+import android.graphics.Rect;
 
-/**
- * Created by Mikael on 2015-04-03.
- */
-public class Player {
-    private int health;
-    private int score;
+public class Player implements GameObject {
+    private int fullHealth, currentHealth;
     private float xPos, yPos;
     private float refX, refY;
     private float rotation;
     private float jumpTime;
+    private long invTime;
     private double jumpSpeed;
     private boolean inAir;
+    private boolean invulnerable;
     private boolean jump;
     private Bitmap playerPic;
 
-    private int width;
-    private int halfPlayerWidth;
+
+    private Rect healthbar;
+    private Paint healthbarPaint;
+
+    private int crashDamage;
+
+    private int width, height;
+    private int playerWidth;
     private int scale;
 
     private long beforeJumpTime;
 
-    Player() {
-        health = 100;
+    public Player() {
+        fullHealth = currentHealth = 1;
         jumpTime = 1000;
-        score = 0;
         inAir = false;
         scale = 8;
         jump = true;
+        healthbarPaint = new Paint();
+        healthbarPaint.setColor(Color.GREEN);
+        invulnerable = false;
+
+        crashDamage = 0;
+
+
+        healthbarPaint.setTextSize(50);
+
     }
 
 
     public Bullet createBullet(float x, float y, Paint paint) {
-        Bullet bullet = new Bullet(refX, refY, x, y, width, paint);
-        return bullet;
+        return new Bullet(refX, refY, x, y, width, paint);
     }
 
     public boolean interact(float x, float y) {
 
-        rotation = (float) Math.atan2(y-refY,x-refX) * 180 / (float) Math.PI + 90;
+        rotation = (float) Math.atan2(y - refY, x - refX) * 180 / (float) Math.PI + 90;
 
         if (shootReady()) {
             jump = true;
@@ -80,9 +94,7 @@ public class Player {
 
     public boolean jump(float jumpX, float jumpY, float percentage) {
 
-
         setCoords(refX + percentage * (jumpX - refX), refY + percentage * (jumpY - refY));
-
 
         return false;
     }
@@ -97,9 +109,13 @@ public class Player {
         return !inAir && !jump;
     }
 
-    public Bitmap initiate(int width, float x, float y, Bitmap playerPic) {
+    public Bitmap initiate(int width, int height, float x, float y, Bitmap playerPic) {
         this.width = width;
-        halfPlayerWidth = width / (2 * scale);
+        this.height = height;
+
+        healthbar = new Rect(0, 0, width, height / 30);
+
+        playerWidth = width / scale;
         jumpSpeed = width / jumpTime;
         refX = x;
         refY = y;
@@ -118,18 +134,59 @@ public class Player {
         jump = false;
     }
 
-    public void drawPlayer(Canvas canvas, Paint paint){
-        canvas.save();
-        canvas.rotate(rotation,xPos,yPos);
-        canvas.drawBitmap(playerPic,(xPos - halfPlayerWidth), (yPos - halfPlayerWidth), new Paint());
-        canvas.restore();
+    public void drawObject(Canvas canvas) {
+        long currentTime = System.currentTimeMillis();
+
+        if ((currentTime-invTime > 333 && currentTime-invTime < 666)){
+            canvas.save();
+            canvas.rotate(rotation, xPos, yPos);
+            canvas.drawBitmap(playerPic, (xPos - playerWidth / 2), (yPos - playerWidth / 2), healthbarPaint);
+            canvas.restore();
+        }
+
+        if (currentTime-invTime > 1000){
+            invulnerable = false;
+            canvas.save();
+            canvas.rotate(rotation, xPos, yPos);
+            canvas.drawBitmap(playerPic, (xPos - playerWidth / 2), (yPos - playerWidth / 2), healthbarPaint);
+            canvas.restore();
+        }
+        canvas.drawRect(healthbar, healthbarPaint);
+
+
     }
 
-    public float getXPos(){
+    public Point getPoint() {
+        return new Point((int) xPos - playerWidth / 2, (int) yPos - playerWidth / 2);
+    }
+
+    public int getObjectWidth() {
+        return playerWidth;
+    }
+
+    public int getDamage() {
+        return crashDamage;
+    }
+
+    public float getXPos() {
         return xPos;
     }
-    public float getYPos(){
+
+    public float getYPos() {
         return yPos;
+    }
+
+    public void damagePlayer(int damage) {
+        if (!invulnerable) {
+            currentHealth -= damage;
+            healthbar.set(0, 0, ((currentHealth * width) / fullHealth), height / 30);
+            invulnerable = true;
+            invTime = System.currentTimeMillis();
+        }
+    }
+
+    public boolean isDead() {
+        return currentHealth <= 0;
     }
 
 }

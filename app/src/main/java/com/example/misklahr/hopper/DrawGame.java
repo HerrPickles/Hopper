@@ -16,10 +16,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Random;
-
 
 public class DrawGame extends Activity implements View.OnTouchListener {
 
@@ -118,6 +114,21 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 //                    canvas.drawText("In air: " + player.isInAir(), 300, 100, paint);
 //                    canvas.drawText("Jump: " + player.jumpReady(), 300, 300, paint);
                     input = game.animateObjects(meX, meY, input, canvas);
+
+                    if (game.isLevelComplete()){
+                        level++;
+                        beginning = true;
+                        initiateGame = true;
+                        startGame = false;
+                    }
+
+                    if (game.isLevelLost()){
+                        beginning = true;
+                        initiateGame = true;
+                        startGame = false;
+                        input = false;
+                    }
+
                 }
 
                 holder.unlockCanvasAndPost(canvas);
@@ -132,7 +143,7 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
                 paint.setTextSize(width / 10);
 
-                canvas.drawText("Spawn!", width / 2, height / 2, paint);
+                canvas.drawText("Level " + level, width / 2, height / 2, paint);
             }
 
             if (currTime - compTime > 1000) {

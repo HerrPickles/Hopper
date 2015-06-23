@@ -2,31 +2,27 @@ package com.example.misklahr.hopper;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Rect;
 
-/**
- * Created by Mikael on 2015-04-05.
- */
-public class Bullet {
+public class Bullet implements GameObject{
 
     private Rect rect;
     private int damage;
     private int width;
-    private int scale;
-    private int halfBulletWidth;
+    private int bulletWidth;
     private long startTime;
-    private int bulletTime;
     private double bulletSpeed;
     private double alpha;
     private Paint paint;
 
-    Bullet(float spawnX, float spawnY, float x, float y, int width, Paint paint) {
+    public Bullet(float spawnX, float spawnY, float x, float y, int width, Paint paint) {
         rect = new Rect();
         damage = 1;
-        bulletTime = 500;
+        int bulletTime = 500;
         this.paint = paint;
-        scale = 40;
-        halfBulletWidth = width / (2 * scale);
+        int scale = 40;
+        bulletWidth = width / scale;
 
         this.width = width;
         bulletSpeed = width / bulletTime;
@@ -38,7 +34,7 @@ public class Bullet {
 
     }
 
-    public void drawBullet(Canvas canvas){
+    public void drawObject(Canvas canvas){
         canvas.drawRect(rect,paint);
     }
 
@@ -51,15 +47,24 @@ public class Bullet {
 
 
     public boolean isOffscreen(int height){
-        if (rect.exactCenterX() < 0 || rect.exactCenterY() < 0 || rect.exactCenterX() > width || rect.exactCenterY() > height){
-            return true;
-        }
-        return false;
+        return (rect.exactCenterX() < 0 || rect.exactCenterY() < 0 || rect.exactCenterX() > width || rect.exactCenterY() > height);
     }
 
     private void setCoords(float x, float y) {
 
-        rect.set((int) (x - halfBulletWidth), (int) (y - halfBulletWidth), (int) (x + halfBulletWidth), (int) (y + halfBulletWidth));
+        rect.set((int) (x - bulletWidth /2), (int) (y - bulletWidth /2), (int) (x + bulletWidth /2), (int) (y + bulletWidth /2));
 
+    }
+
+    public Point getPoint(){
+        return new Point(rect.left,rect.top);
+    }
+
+    public int getObjectWidth() {
+        return bulletWidth;
+    }
+
+    public int getDamage(){
+        return damage;
     }
 }

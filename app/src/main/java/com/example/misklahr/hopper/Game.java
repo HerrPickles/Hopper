@@ -5,12 +5,13 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 
+import com.example.misklahr.hopper.Enemies.Enemy;
+import com.example.misklahr.hopper.Enemies.Minion;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 
-/**
- * Created by Mikael Nilsson on 2015-05-03.
- */
+
 public class Game {
 
     private LinkedList<Bullet> bulletList;
@@ -20,6 +21,7 @@ public class Game {
 
     private int level;
     private int width, height;
+    private boolean levelComplete, levelLost;
 
     private Player player;
 
@@ -32,13 +34,14 @@ public class Game {
         player = new Player();
         paint = new Paint();
         paint.setColor(Color.WHITE);
-
+        levelComplete = false;
+        levelLost = false;
     }
 
     public Bitmap initiate(int width, int height, float x, float y, Bitmap playerPic) {
 
-        Bitmap newPlayerPic = player.initiate(width, x, y, playerPic);
-        player.jump(y, x, 0);
+        Bitmap newPlayerPic = player.initiate(width, height, x, y, playerPic);
+        player.jump(x, y, 0);
         this.height = height;
         this.width = width;
         gameTime = System.currentTimeMillis();
@@ -78,27 +81,55 @@ public class Game {
         Iterator<Enemy> enemyIterator = enemyList.iterator();
         while (enemyIterator.hasNext()) {
             Enemy e = enemyIterator.next();
-            e.jump2();
+
+            bulletIterator = bulletList.iterator();
+            while (bulletIterator.hasNext()) {
+
+                if (e.intersects(bulletIterator.next())) {
+                    bulletIterator.remove();
+                    if (e.isDead()) {
+                        enemyIterator.remove();
+                    }
+
+
+                    if (enemyList.isEmpty()) {
+                        levelComplete = true;
+                    }
+                }
+
+            }
+
+            if (e.intersects(player)){
+                e.damage(player);
+                if (player.isDead()){
+                    levelLost = true;
+                }
+            }
+
+            e.jump();
         }
 
 
 
-/* Se till att när man klarat en level, spawna inte nya xD */
-        if (enemyList.isEmpty() && System.currentTimeMillis() - gameTime > 1000) {
+        if (enemyList.isEmpty() && System.currentTimeMillis() - gameTime > 1000 && !levelComplete) {
             for (int i = 0; i < level % 5; i++) {
-                enemyList.add(new Enemy(level, width, height, paint, player));
+                enemyList.add(new Minion(level, width, height, paint, player));
+            }
+
+            if (level % 5 == 0){
+                enemyList.add(new Minion(level, width, height, paint, player));
             }
         }
 
 
-        player.drawPlayer(canvas, paint);
+        player.drawObject(canvas);
 
         for (Bullet b : bulletList) {
-            b.drawBullet(canvas);
+            b.drawObject(canvas);
         }
 
         for (Enemy e : enemyList) {
-            e.drawEnemy(canvas);
+            e.drawObject(canvas);
         }
 
         return returnInput;
@@ -109,10 +140,11 @@ public class Game {
         return !player.isInAir();
     }
 
-    public boolean ongoing() {
-        if (!enemyList.isEmpty()) {
-            return true;
-        }
-        return false;
+    public boolean isLevelComplete(){
+        return levelComplete;
+    }
+
+    public boolean isLevelLost(){
+        return levelLost;
     }
 }

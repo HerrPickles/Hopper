@@ -1,15 +1,18 @@
-package com.example.misklahr.hopper;
+package com.example.misklahr.hopper.Enemies;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+
+import com.example.misklahr.hopper.GameObject;
+import com.example.misklahr.hopper.Player;
 
 import java.util.Random;
 
 /**
  * Created by Mikael on 2015-04-06.
  */
-public class Enemy {
+public class Minion implements Enemy{
 
     private Rect rect;
     private int health;
@@ -28,19 +31,16 @@ public class Enemy {
     private int jumpWait, counter;
 
 
-    private float refX, refY;
     private float finX, finY;
     private double alpha;
     private double dAlpha;
     double trueAlpha;
 
 
-    private int level;
 
-    Enemy(int level, int width, int height, Paint paint, Player player) {
-        this.level = level;
-        damage = level;
-        health = level;
+    public Minion(int level, int width, int height, Paint paint, Player player) {
+        damage = level / 5 + 1;
+        health = level / 5 + 1;
         this.width = width;
         this.height = height;
         int jumpTime = 2000;
@@ -63,17 +63,17 @@ public class Enemy {
 
         float xPos, yPos;
         if (seed == 0) {
-            xPos = refX = random.nextInt(width + 1);
-            yPos = refY = 0;
+            xPos = random.nextInt(width + 1);
+            yPos = 0;
         } else if (seed == 1) {
-            xPos = refX = random.nextInt(width + 1);
-            yPos = refY = height;
+            xPos = random.nextInt(width + 1);
+            yPos = height;
         } else if (seed == 2) {
-            yPos = refY = random.nextInt(height + 1);
-            xPos = refX = 0;
+            yPos = random.nextInt(height + 1);
+            xPos = 0;
         } else {
-            yPos = refY = random.nextInt(height + 1);
-            xPos = refX = width;
+            yPos = random.nextInt(height + 1);
+            xPos = width;
         }
 
 
@@ -84,35 +84,7 @@ public class Enemy {
 
     }
 
-
-//    public void jump() {
-//
-//        if (!inAir) {
-//            beforeJumpTime = System.currentTimeMillis();
-//            inAir = true;
-//            finX = player.getXPos();
-//            finY = player.getYPos();
-//
-//            double dist = Math.sqrt((finX - refX) * (finX - refX) + (finY - refY) * (finY - refY));
-//            time = dist / jumpSpeed;
-//
-//        }
-//
-//        long currTime = System.currentTimeMillis();
-//
-//        float percentage = (currTime - beforeJumpTime) / (float) time;
-//
-//        if (percentage >= 1) {
-//            refX = finX;
-//            refY = finY;
-//            inAir = false;
-//        }
-//
-//        setCoords(refX + percentage * (finX - refX), refY + percentage * (finY - refY));
-//
-//    }
-
-    public void jump2() {
+    public void jump() {
 
         long currTime = System.currentTimeMillis();
         long timeDiff = currTime - beforeJumpTime;
@@ -171,12 +143,60 @@ public class Enemy {
 
     }
 
-    public void drawEnemy(Canvas canvas) {
+    public void drawObject(Canvas canvas) {
         canvas.drawRect(rect, paint);
     }
 
-    public boolean interacts(){
+    public boolean intersects(GameObject gameObject){
+
+        int x = gameObject.getPoint().x;
+        int y = gameObject.getPoint().y;
+        int w = gameObject.getObjectWidth();
+
+        if (inside(x, y)){
+            health -= gameObject.getDamage();
+            return true;
+        }
+
+        x += w;
+
+        if (inside(x, y)){
+            health -= gameObject.getDamage();
+            return true;
+        }
+
+        y += w;
+
+        if (inside(x, y)){
+            health -= gameObject.getDamage();
+            return true;
+        }
+
+        x -= w;
+
+        if (inside(x, y)){
+            health -= gameObject.getDamage();
+            return true;
+        }
+
         return false;
+    }
+
+    private boolean inside(int x, int y){
+
+        if (x <= rect.right && x >= rect.left && y <= rect.bottom && y >= rect.top){
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean isDead(){
+        return health <= 0;
+    }
+
+    public void damage(Player player){
+        player.damagePlayer(damage);
     }
 
 }
