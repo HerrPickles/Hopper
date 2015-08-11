@@ -71,12 +71,6 @@ public class DrawGame extends Activity implements View.OnTouchListener {
         private float meX, meY;
 
         private String state = "beginning";
-        private boolean beginning = true;
-        private boolean beginningAnim = false;
-        private boolean shopAnim = false;
-        private boolean initiateGame = false;
-        private boolean initiateShop = false;
-        private boolean startGame = false;
 
         private int width;
         private int height;
@@ -113,22 +107,28 @@ public class DrawGame extends Activity implements View.OnTouchListener {
                     continue;
                 }
                 Canvas canvas = holder.lockCanvas();
-                canvas.drawRGB(02, 02, 150);
+
+                int color = 150;
+                if (state.equals("initiateShop")){
+                    color = 190;
+                }
+
+                canvas.drawRGB(02, 02, color);
 
 
-                if (beginning && !startGame) {
+                if (state.equals("beginning")) {
                     width = canvas.getWidth();
                     height = canvas.getHeight();
                     beginGameMenu(canvas);
-                } else if ((beginningAnim || shopAnim) && !startGame) {
+                } else if (state.equals("gameAnimation") || state.equals("shopAnimation")) {
                     beginningAnim(canvas);
-                } else if (initiateGame && !startGame) {
+                } else if (state.equals("initiateGame")) {
                     initiateGame();
-                } else if (initiateShop && !startGame) {
+                } else if (state.equals("initiateShop")) {
                     initiateShop();
                 }
 
-                if (startGame) {
+                if (state.equals("startGame")) {
                     input = game.animateObjects(meX, meY, input, canvas);
 
 
@@ -146,15 +146,11 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
                         level++;
 
-                        beginning = true;
-                        initiateGame = true;
-                        startGame = false;
+                        state = "beginning";
                     }
 
                     if (game.isLevelLost()) {
-                        beginning = true;
-                        initiateGame = true;
-                        startGame = false;
+                        state = "beginning";
                         input = false;
                     }
 
@@ -201,22 +197,22 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
 
                 if (currTime - compTime > 1000) {
-                    if (beginningAnim) {
-                        beginningAnim = false;
-                        initiateGame = true;
-                    } else if (shopAnim) {
-                        shopAnim = false;
-                        initiateShop = true;
+                    if (state.equals("gameAnimation")) {
+                        state = "initiateGame";
+                    } else if (state.equals("shopAnimation")) {
+                        state = "initiateShop";
+                        canvas.drawRGB(02, 02, 190);
                     }
                     input = false;
+
                 } else {
-                    if (beginningAnim) {
+                    if (state.equals("gameAnimation")) {
                         double topHeight = height / 2 - (height / 2) * (double) (currTime - compTime) / 1000;
                         Rect topRect = new Rect(0, 0, width, (int) topHeight);
                         Paint topPaint = new Paint();
                         topPaint.setColor(Color.rgb(02, 02, 190));
                         canvas.drawRect(topRect, topPaint);
-                    } else if (shopAnim) {
+                    } else if (state.equals("shopAnimation")) {
                         double topHeight = height / 2 + (height / 2) * (double) (currTime - compTime) / 1000;
                         Rect topRect = new Rect(0, 0, width, (int) topHeight);
                         Paint topPaint = new Paint();
@@ -237,8 +233,7 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
             playerPic = game.initiate(width, height, meX, meY, playerPic);
 
-            initiateGame = false;
-            startGame = true;
+            state = "startGame";
         }
 
         private void initiateShop() {
@@ -255,21 +250,21 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
             switch (me.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    if (startGame && game.getNewInput()) {
+                    if (state.equals("startGame") && game.getNewInput()) {
                         meX = me.getX();
                         meY = me.getY();
                         input = true;
                     }
                     break;
                 case MotionEvent.ACTION_UP:
-                    if (beginning)
-                        beginning = false;
-                    if (!startGame) {
+                    if (state.equals("beginning"))
+                        state = "animation";
+                    if (state.equals("animation")) {
                         compTime = System.currentTimeMillis();
                         if (me.getY() > height / 2) {
-                            beginningAnim = true;
+                            state = "gameAnimation";
                         } else {
-                            shopAnim = true;
+                            state = "shopAnimation";
                         }
 
                     }
