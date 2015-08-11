@@ -70,9 +70,12 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
         private float meX, meY;
 
+        private String state = "beginning";
         private boolean beginning = true;
         private boolean beginningAnim = false;
+        private boolean shopAnim = false;
         private boolean initiateGame = false;
+        private boolean initiateShop = false;
         private boolean startGame = false;
 
         private int width;
@@ -87,8 +90,6 @@ public class DrawGame extends Activity implements View.OnTouchListener {
         private int points;
 
 
-
-
         public MyView(Context context) {
             super(context);
             holder = getHolder();
@@ -97,19 +98,11 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inScaled = false;
-            playerPic = BitmapFactory.decodeResource(getResources(),R.drawable.player,options);
-
+            playerPic = BitmapFactory.decodeResource(getResources(), R.drawable.player, options);
 
 
             paint.setColor(Color.WHITE);
             paint.setTextAlign(Paint.Align.CENTER);
-
-
-
-//            SharedPreferences.Editor editor = spref.edit();
-//            editor.putInt("points", 0);
-//            editor.putInt("CurrentLevel", 1);
-//            editor.commit();
 
 
         }
@@ -127,23 +120,27 @@ public class DrawGame extends Activity implements View.OnTouchListener {
                     width = canvas.getWidth();
                     height = canvas.getHeight();
                     beginGameMenu(canvas);
-                } else if (beginningAnim && !startGame){
+                } else if ((beginningAnim || shopAnim) && !startGame) {
                     beginningAnim(canvas);
-                }else if (initiateGame && !startGame) {
+                } else if (initiateGame && !startGame) {
                     initiateGame();
-                } else {
+                } else if (initiateShop && !startGame) {
+                    initiateShop();
+                }
+
+                if (startGame) {
                     input = game.animateObjects(meX, meY, input, canvas);
 
 
-                    if (game.isLevelComplete()){
+                    if (game.isLevelComplete()) {
 
                         SharedPreferences.Editor editor = spref.edit();
 
-                        if (level % 5 == 0){
+                        if (level % 5 == 0) {
                             editor.putInt("points", spref.getInt("points", 0) + level);
                         }
 
-                        editor.putInt("CurrentLevel", level+1);
+                        editor.putInt("CurrentLevel", level + 1);
                         editor.commit();
                         points = spref.getInt("points", 0);
 
@@ -154,7 +151,7 @@ public class DrawGame extends Activity implements View.OnTouchListener {
                         startGame = false;
                     }
 
-                    if (game.isLevelLost()){
+                    if (game.isLevelLost()) {
                         beginning = true;
                         initiateGame = true;
                         startGame = false;
@@ -173,7 +170,7 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
             input = false;
 
-            Rect topRect = new Rect(0, 0, width, height/2);
+            Rect topRect = new Rect(0, 0, width, height / 2);
             Paint topPaint = new Paint();
             topPaint.setColor(Color.rgb(02, 02, 190));
             canvas.drawRect(topRect, topPaint);
@@ -182,36 +179,51 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
             currTime = System.currentTimeMillis();
 
+            canvas.drawText("Shop", width / 2, height / 4, paint);
 
+            if (currTime - compTime < 700) {
 
-                if (currTime - compTime < 700) {
+                paint.setTextSize(width / 10);
 
-                    paint.setTextSize(width / 10);
+                canvas.drawText("Level " + level, width / 2, 3 * height / 4, paint);
+            }
 
-                    canvas.drawText("Level " + level, width / 2, height / 2, paint);
-                }
-
-                if (currTime - compTime > 1000) {
-                    compTime = currTime;
-                }
+            if (currTime - compTime > 1000) {
+                compTime = currTime;
+            }
 
 
         }
 
-        private void beginningAnim(Canvas canvas){
+        private void beginningAnim(Canvas canvas) {
             currTime = System.currentTimeMillis();
+            input = true;
 
-            if (currTime - compTime > 1000) {
-                beginningAnim = false;
-                initiateGame = true;
-            }
 
-            double topHeight = height/2 - (height/2) * (double) (currTime - compTime)/1000;
-            Rect topRect = new Rect(0, 0, width, (int) topHeight);
-            Paint topPaint = new Paint();
-            topPaint.setColor(Color.rgb(02, 02, 190));
-            canvas.drawRect(topRect, topPaint);
-
+                if (currTime - compTime > 1000) {
+                    if (beginningAnim) {
+                        beginningAnim = false;
+                        initiateGame = true;
+                    } else if (shopAnim) {
+                        shopAnim = false;
+                        initiateShop = true;
+                    }
+                    input = false;
+                } else {
+                    if (beginningAnim) {
+                        double topHeight = height / 2 - (height / 2) * (double) (currTime - compTime) / 1000;
+                        Rect topRect = new Rect(0, 0, width, (int) topHeight);
+                        Paint topPaint = new Paint();
+                        topPaint.setColor(Color.rgb(02, 02, 190));
+                        canvas.drawRect(topRect, topPaint);
+                    } else if (shopAnim) {
+                        double topHeight = height / 2 + (height / 2) * (double) (currTime - compTime) / 1000;
+                        Rect topRect = new Rect(0, 0, width, (int) topHeight);
+                        Paint topPaint = new Paint();
+                        topPaint.setColor(Color.rgb(02, 02, 190));
+                        canvas.drawRect(topRect, topPaint);
+                    }
+                }
 
 
 
@@ -227,6 +239,10 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
             initiateGame = false;
             startGame = true;
+        }
+
+        private void initiateShop() {
+
         }
 
         private void doAction(MotionEvent me) {
@@ -248,9 +264,14 @@ public class DrawGame extends Activity implements View.OnTouchListener {
                 case MotionEvent.ACTION_UP:
                     if (beginning)
                         beginning = false;
-                    if (!startGame){
-                        beginningAnim = true;
+                    if (!startGame) {
                         compTime = System.currentTimeMillis();
+                        if (me.getY() > height / 2) {
+                            beginningAnim = true;
+                        } else {
+                            shopAnim = true;
+                        }
+
                     }
                     break;
                 case MotionEvent.ACTION_MOVE:
