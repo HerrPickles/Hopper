@@ -3,12 +3,15 @@ package com.example.misklahr.hopper;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -21,10 +24,14 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
     private MyView surfaceView;
     private boolean input = false;
+    private SharedPreferences spref;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        spref = PreferenceManager.getDefaultSharedPreferences(this);
+
         surfaceView = new MyView(this);
         surfaceView.setOnTouchListener(this);
         setContentView(surfaceView);
@@ -61,10 +68,10 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
         private Bitmap playerPic;
 
-        private int level;
-
         private float meX, meY;
+
         private boolean beginning = true;
+        private boolean beginningAnim = false;
         private boolean initiateGame = false;
         private boolean startGame = false;
 
@@ -72,6 +79,12 @@ public class DrawGame extends Activity implements View.OnTouchListener {
         private int height;
 
         private Game game;
+
+
+        private int level;
+
+
+        private int points;
 
 
 
@@ -82,8 +95,6 @@ public class DrawGame extends Activity implements View.OnTouchListener {
             paint = new Paint();
             compTime = System.currentTimeMillis();
 
-            level = 1;
-
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inScaled = false;
             playerPic = BitmapFactory.decodeResource(getResources(),R.drawable.player,options);
@@ -92,6 +103,14 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
             paint.setColor(Color.WHITE);
             paint.setTextAlign(Paint.Align.CENTER);
+
+
+
+//            SharedPreferences.Editor editor = spref.edit();
+//            editor.putInt("points", 0);
+//            editor.putInt("CurrentLevel", 1);
+//            editor.commit();
+
 
         }
 
@@ -108,15 +127,28 @@ public class DrawGame extends Activity implements View.OnTouchListener {
                     width = canvas.getWidth();
                     height = canvas.getHeight();
                     beginGameMenu(canvas);
-                } else if (initiateGame && !startGame) {
+                } else if (beginningAnim && !startGame){
+                    beginningAnim(canvas);
+                }else if (initiateGame && !startGame) {
                     initiateGame();
                 } else {
-//                    canvas.drawText("In air: " + player.isInAir(), 300, 100, paint);
-//                    canvas.drawText("Jump: " + player.jumpReady(), 300, 300, paint);
                     input = game.animateObjects(meX, meY, input, canvas);
 
+
                     if (game.isLevelComplete()){
+
+                        SharedPreferences.Editor editor = spref.edit();
+
+                        if (level % 5 == 0){
+                            editor.putInt("points", spref.getInt("points", 0) + level);
+                        }
+
+                        editor.putInt("CurrentLevel", level+1);
+                        editor.commit();
+                        points = spref.getInt("points", 0);
+
                         level++;
+
                         beginning = true;
                         initiateGame = true;
                         startGame = false;
@@ -138,17 +170,51 @@ public class DrawGame extends Activity implements View.OnTouchListener {
 
 
         private void beginGameMenu(Canvas canvas) {
+
+            input = false;
+
+            Rect topRect = new Rect(0, 0, width, height/2);
+            Paint topPaint = new Paint();
+            topPaint.setColor(Color.rgb(02, 02, 190));
+            canvas.drawRect(topRect, topPaint);
+
+            level = spref.getInt("CurrentLevel", 1);
+
             currTime = System.currentTimeMillis();
-            if (currTime - compTime < 700) {
 
-                paint.setTextSize(width / 10);
 
-                canvas.drawText("Level " + level, width / 2, height / 2, paint);
-            }
+
+                if (currTime - compTime < 700) {
+
+                    paint.setTextSize(width / 10);
+
+                    canvas.drawText("Level " + level, width / 2, height / 2, paint);
+                }
+
+                if (currTime - compTime > 1000) {
+                    compTime = currTime;
+                }
+
+
+        }
+
+        private void beginningAnim(Canvas canvas){
+            currTime = System.currentTimeMillis();
 
             if (currTime - compTime > 1000) {
-                compTime = currTime;
+                beginningAnim = false;
+                initiateGame = true;
             }
+
+            double topHeight = height/2 - (height/2) * (double) (currTime - compTime)/1000;
+            Rect topRect = new Rect(0, 0, width, (int) topHeight);
+            Paint topPaint = new Paint();
+            topPaint.setColor(Color.rgb(02, 02, 190));
+            canvas.drawRect(topRect, topPaint);
+
+
+
+
         }
 
         private void initiateGame() {
@@ -182,8 +248,10 @@ public class DrawGame extends Activity implements View.OnTouchListener {
                 case MotionEvent.ACTION_UP:
                     if (beginning)
                         beginning = false;
-                    if (!startGame)
-                        initiateGame = true;
+                    if (!startGame){
+                        beginningAnim = true;
+                        compTime = System.currentTimeMillis();
+                    }
                     break;
                 case MotionEvent.ACTION_MOVE:
                     break;

@@ -1,6 +1,7 @@
 package com.example.misklahr.hopper.Enemies;
 
 import android.graphics.Canvas;
+import android.graphics.Paint;
 
 import com.example.misklahr.hopper.GameObject;
 import com.example.misklahr.hopper.Player;
@@ -11,6 +12,12 @@ import com.example.misklahr.hopper.Player;
 
 
 public class Boss5 implements Enemy {
+
+    public Boss5(int level, int width, int height, Paint paint, Player player){
+
+    }
+
+
     public void jump() {
 
     }
